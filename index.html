@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Science 1206: How Latent Heat Builds Clouds & Storms</title>
+<title>Science 1206: Heating Curve of Water Simulation</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root {
     --primary: #1e3a8a;
     --accent: #d97706;
-    --bg: #f8fafc;
+    --bg: #f1f5f9;
     --card-bg: #ffffff;
     --border: #cbd5e1;
     --text: #1e293b;
-    --solid-red: #ef4444;
   }
 
   body {
@@ -20,7 +20,7 @@
     background-color: var(--bg);
     color: var(--text);
     margin: 0;
-    padding: 16px 20px;
+    padding: 16px 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -29,53 +29,16 @@
   header {
     max-width: 1200px;
     width: 100%;
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
+    margin-bottom: 12px;
   }
 
   h1 {
     margin: 0;
-    font-size: 1.55rem;
+    font-size: 1.6rem;
     color: var(--primary);
   }
 
-  .mantra-banner {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #0369a1;
-    margin-top: 3px;
-  }
-
-  /* Mode Switcher Tabs */
-  .mode-switcher {
-    display: flex;
-    background: #e2e8f0;
-    border-radius: 8px;
-    padding: 3px;
-    gap: 4px;
-  }
-
-  .tab-btn {
-    padding: 8px 16px;
-    font-size: 0.88rem;
-    font-weight: 700;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    background: transparent;
-    color: #475569;
-    transition: all 0.2s ease;
-  }
-
-  .tab-btn.active {
-    background: white;
-    color: var(--primary);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-  }
-
-  /* Control Bar */
+  /* Global Master Controls */
   .control-bar {
     max-width: 1200px;
     width: 100%;
@@ -86,7 +49,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     box-sizing: border-box;
   }
 
@@ -98,7 +61,7 @@
 
   button.btn {
     padding: 7px 14px;
-    font-size: 0.88rem;
+    font-size: 0.9rem;
     font-weight: 600;
     border: none;
     border-radius: 6px;
@@ -109,19 +72,27 @@
     gap: 6px;
   }
 
-  .btn-play { background: #10b981; color: white; }
-  .btn-pause { background: #ef4444; color: white; }
+  .btn-power-off { background: #ef4444; color: white; }
+  .btn-power-on { background: #10b981; color: white; }
   .btn-reset { background: #64748b; color: white; }
-  .btn-step { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
-  .btn-step:hover { background: #bae6fd; }
-  .btn:hover { opacity: 0.9; }
+  .btn-record { background: #0284c7; color: white; }
+  .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
 
-  /* 2-Column Grid */
+  select {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 0.88rem;
+    background: white;
+  }
+
+  /* 2-Column Desktop Grid */
   .workspace {
     max-width: 1200px;
     width: 100%;
     display: grid;
-    grid-template-columns: 700px 1fr;
+    grid-template-columns: 460px 1fr;
     gap: 16px;
     align-items: start;
   }
@@ -138,185 +109,408 @@
     font-size: 1.05rem;
     font-weight: 700;
     color: var(--primary);
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     border-bottom: 1px solid var(--border);
-    padding-bottom: 6px;
+    padding-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .card-title-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin-bottom: 10px;
   }
 
-  /* Stage Canvas */
-  #stageCanvas {
-    width: 100%;
-    height: 520px;
+  /* Apparatus Layout */
+  .apparatus-stage {
+    position: relative;
+    height: 310px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    background: #fafafa;
     border-radius: 8px;
-    border: 1px solid #cbd5e1;
-    display: block;
-    background: #0f172a;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 10px;
+    overflow: hidden;
   }
 
-  /* Right-Side Ledgers & Explanations */
-  .step-tracker {
+  /* Digital Readouts Inset */
+  .digital-readout-panel {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 8px 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    z-index: 10;
+  }
+
+  .readout-item {
+    font-size: 0.85rem;
+    color: #475569;
+    margin-bottom: 2px;
+  }
+
+  .readout-value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    font-family: monospace;
+    color: #0f172a;
+  }
+
+  /* Hot Plate */
+  .hot-plate {
+    width: 260px;
+    height: 48px;
+    background: #334155;
+    border-radius: 8px 8px 0 0;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+  }
+
+  .heat-coil {
+    width: 220px;
+    height: 8px;
+    background: #475569;
+    border-radius: 4px;
+    transition: background 0.5s ease, box-shadow 0.5s ease;
+  }
+
+  .heat-coil.glowing {
+    background: #ef4444;
+    box-shadow: 0 0 16px #f87171, 0 0 24px #ef4444;
+  }
+
+  /* Beaker */
+  .beaker {
+    position: absolute;
+    bottom: 48px;
+    width: 170px;
+    height: 190px;
+    border: 3px solid rgba(148, 163, 184, 0.8);
+    border-top: none;
+    border-radius: 0 0 14px 14px;
+    background: rgba(240, 249, 255, 0.3);
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .beaker-lip {
+    position: absolute;
+    top: -6px;
+    left: -8px;
+    width: 16px;
+    height: 8px;
+    border-bottom: 3px solid rgba(148, 163, 184, 0.8);
+    border-right: 3px solid rgba(148, 163, 184, 0.8);
+    transform: rotate(45deg);
+  }
+
+  .water-fluid {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0%;
+    background: rgba(56, 189, 248, 0.45);
+    transition: height 0.4s ease;
+  }
+
+  /* Ice chunks */
+  .ice-container {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .ice-cube {
+    position: absolute;
+    background: rgba(224, 242, 254, 0.85);
+    border: 1px solid #7dd3fc;
+    border-radius: 3px;
+    box-shadow: inset 0 0 3px rgba(255,255,255,0.9);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  /* Thermometer immersed */
+  .thermometer-rig {
+    position: absolute;
+    bottom: 60px;
+    right: 175px;
+    width: 12px;
+    height: 220px;
+    background: rgba(255,255,255,0.6);
+    border: 2px solid #64748b;
+    border-radius: 6px 6px 0 0;
+    z-index: 8;
+  }
+
+  .thermo-mercury {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: #dc2626;
+    height: 10%;
+    transition: height 0.2s ease;
+  }
+
+  .thermo-bulb {
+    position: absolute;
+    bottom: -10px;
+    left: -4px;
+    width: 16px;
+    height: 16px;
+    background: #dc2626;
+    border: 2px solid #64748b;
+    border-radius: 50%;
+    z-index: 9;
+  }
+
+  /* Particle Overlay (Steam & Bubbles) */
+  #fxCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  /* Molecular View Inset */
+  .molecular-card {
+    background: #0f172a;
+    color: white;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 10px;
+  }
+
+  .molecular-header {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    align-items: flex-start;
+    gap: 3px;
+    margin-bottom: 8px;
+  }
+
+  .molecular-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+  }
+
+  #bondStatusTag {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #38bdf8;
+    letter-spacing: 0.4px;
+  }
+
+  #molCanvas {
+    width: 100%;
+    height: 110px;
+    background: #1e293b;
+    border-radius: 6px;
+    display: block;
+  }
+
+  .bond-state-callout {
+    margin-top: 6px;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    padding: 6px 8px;
+    border-radius: 4px;
+    background: #1e293b;
+    border-left: 3px solid #f59e0b;
+  }
+
+  /* Right Column: Chart & Data Table */
+  .chart-container {
+    position: relative;
+    height: 250px;
     margin-bottom: 14px;
   }
 
-  .step-pill {
-    padding: 8px 12px;
-    border-radius: 6px;
-    border: 1px solid #e2e8f0;
-    background: #f8fafc;
-    font-size: 0.85rem;
-    color: #64748b;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-  }
-
-  .step-pill.active {
-    background: #e0f2fe;
-    border-color: #38bdf8;
-    color: #0369a1;
-    font-weight: 700;
-    box-shadow: 0 2px 5px rgba(2,132,199,0.12);
-  }
-
-  /* Energy Ledger */
-  .ledger-box {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 12px;
-  }
-
-  .ledger-row {
+  .table-controls {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 6px;
-    font-size: 0.85rem;
   }
 
-  .block-preview {
-    width: 14px;
-    height: 14px;
-    display: inline-flex;
-    justify-content: center;
+  .table-scroll {
+    max-height: 185px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    text-align: left;
+  }
+
+  th {
+    background: #f8fafc;
+    position: sticky;
+    top: 0;
+    padding: 6px 10px;
+    border-bottom: 2px solid var(--border);
+    color: #475569;
+    font-weight: 600;
+  }
+
+  td {
+    padding: 5px 10px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  tr:nth-child(even) { background-color: #f8fafc; }
+  tr.highlight-row { background-color: #fef3c7; font-weight: 600; }
+
+  .auto-log-toggle {
+    font-size: 0.82rem;
+    display: flex;
     align-items: center;
-    font-size: 8px;
-    font-weight: 900;
-    border-radius: 2px;
-    margin-right: 4px;
-  }
-
-  .preview-solid { background: #ef4444; color: white; }
-  .preview-ghost { border: 1.5px dashed #64748b; color: #64748b; background: rgba(148, 163, 184, 0.2); }
-
-  .callout-box {
-    background: #fef2f2;
-    border-left: 4px solid #ef4444;
-    padding: 12px;
-    border-radius: 0 8px 8px 0;
-    font-size: 0.85rem;
-    line-height: 1.45;
-    color: #991b1b;
+    gap: 6px;
+    color: #475569;
+    user-select: none;
   }
 </style>
 </head>
 <body>
 
 <header>
-  <div>
-    <h1>☁️ The Atmospheric Latent Heat Engine</h1>
-    <div class="mantra-banner">"Rising air cools → Cool air makes clouds → Clouds make rain"</div>
-  </div>
-
-  <div class="mode-switcher">
-    <button class="tab-btn active" id="tabHurricane" onclick="setMode('hurricane')">🌀 Tropical Storm</button>
-    <button class="tab-btn" id="tabWinter" onclick="setMode('winter')">❄️ Winter "Bomb" Cyclone</button>
-  </div>
+  <h1>🔬 Science 1206: Heating Curve of Water</h1>
 </header>
 
-<!-- Global Master Controls -->
+<!-- Global Master Controls Bar -->
 <div class="control-bar">
   <div class="control-group">
-    <button class="btn btn-play" id="playBtn" onclick="togglePlay()">▶️ Start Ascent</button>
-    <button class="btn btn-reset" onclick="resetSim()">🔄 Reset</button>
+    <button class="btn btn-power-on" id="powerBtn" onclick="togglePower()">🔥 Turn Hot Plate ON</button>
+    <button class="btn btn-reset" onclick="resetSim()">🔄 Reset Lab</button>
+    <label style="font-size: 0.85rem; font-weight:600; margin-left: 10px;">Sim Speed:</label>
+    <select id="speedSelect" onchange="simSpeed = parseFloat(this.value)">
+      <option value="1">1x (Real-time speed)</option>
+      <option value="2">2x Speed</option>
+      <option value="5" selected>5x Speed (Recommended)</option>
+      <option value="10">10x Speed (Fast)</option>
+    </select>
   </div>
 
   <div class="control-group">
-    <span style="font-size: 0.82rem; font-weight: 700; color: #64748b;">Jump to Step:</span>
-    <button class="btn btn-step" onclick="jumpTo(1)">1. Rising Air</button>
-    <button class="btn btn-step" onclick="jumpTo(2)">2. Cloud Forms</button>
-    <button class="btn btn-step" onclick="jumpTo(3)">3. Precipitation</button>
+    <label class="auto-log-toggle">
+      <input type="checkbox" id="autoLogCheck" checked> Auto-log every 30s
+    </label>
+    <button class="btn btn-record" onclick="logDataPoint(true)">📝 Record Data Point</button>
   </div>
 </div>
 
 <!-- Main Workspace -->
 <div class="workspace">
 
-  <!-- Left: The Unified Atmosphere & Microscope Canvas -->
-  <div class="card" style="padding: 10px;">
-    <div class="card-title">
-      <span id="canvasHeader">Atmospheric Cross-Section & Microscope View</span>
-      <span id="stageBadge" style="font-size: 0.8rem; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 12px;">Step 1: Rising Air</span>
-    </div>
-    <canvas id="stageCanvas" width="680" height="520"></canvas>
-  </div>
-
-  <!-- Right: Guided Steps, Ledger & Surroundings Explanation -->
+  <!-- Left Column: Lab Apparatus & Molecular View -->
   <div>
     <div class="card">
-      <div class="card-title">Guided Learning Steps</div>
-      
-      <div class="step-tracker">
-        <div class="step-pill active" id="pill1">
-          <span>1️⃣</span>
-          <div>
-            <strong>Rising Air Cools:</strong> Warm, moist air rises from the ocean. As it expands, the air temperature drops.
-          </div>
+      <div class="card-title">
+        <span>Beaker on Hot Plate</span>
+        <span id="stateBadge" style="font-size: 0.82rem; background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 12px; font-weight: 600;">Solid (Ice)</span>
+      </div>
+
+      <div class="apparatus-stage">
+        <!-- Floating Digital Readout Box -->
+        <div class="digital-readout-panel">
+          <div class="readout-item">Elapsed Time:</div>
+          <div class="readout-value" id="timerDisplay">00:00</div>
+          <div class="readout-item" style="margin-top: 4px;">Temperature:</div>
+          <div class="readout-value" id="tempDisplay">-10.0 °C</div>
         </div>
 
-        <div class="step-pill" id="pill2">
-          <span>2️⃣</span>
-          <div>
-            <strong>Cool Air Makes Clouds:</strong> Vapour condenses into droplets (or freezes into snow). <em>Ghost [E]s burst into Solid Red [E]s, warming the surrounding air!</em>
-          </div>
+        <!-- Canvas for Steam & Boiling Bubbles -->
+        <canvas id="fxCanvas" width="430" height="310"></canvas>
+
+        <!-- Beaker -->
+        <div class="beaker">
+          <div class="beaker-lip"></div>
+          <div class="water-fluid" id="waterLevel"></div>
+          <div class="ice-container" id="iceContainer"></div>
         </div>
 
-        <div class="step-pill" id="pill3">
-          <span>3️⃣</span>
-          <div>
-            <strong>Clouds Make Precipitation:</strong> Heat released into the surrounding air fuels powerful updrafts, towering the cloud and producing heavy rain/snow.
-          </div>
+        <!-- Thermometer -->
+        <div class="thermometer-rig">
+          <div class="thermo-mercury" id="mercuryFill"></div>
+          <div class="thermo-bulb"></div>
+        </div>
+
+        <!-- Hot Plate Base -->
+        <div class="hot-plate">
+          <div class="heat-coil" id="heatCoil"></div>
         </div>
       </div>
 
-      <!-- PhET Energy Block Ledger -->
-      <div class="card-title" style="margin-top: 14px;">Energy Block Ledger (No Joules!)</div>
-      <div class="ledger-box">
-        <div class="ledger-row">
-          <span><span class="block-preview preview-ghost">E</span> <strong>Ghost [E]s in Vapour</strong> (Hidden Latent Heat):</span>
-          <span style="font-weight: 800; font-family: monospace; font-size: 1.1rem; color: #64748b;" id="ghostCount">12</span>
+      <!-- Molecular / Hydrogen Bond View -->
+      <div class="molecular-card">
+        <div class="molecular-header">
+          <span class="molecular-title">Sub-Microscopic View (H₂O Molecules & Bonds)</span>
+          <span id="bondStatusTag">Lattice Structure</span>
         </div>
-        <div class="ledger-row">
-          <span><span class="block-preview preview-solid">E</span> <strong>Solid Red [E]s in Air</strong> (Sensible Heat):</span>
-          <span style="font-weight: 800; font-family: monospace; font-size: 1.1rem; color: #ef4444;" id="solidCount">4</span>
-        </div>
-        <div class="ledger-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border);">
-          <span style="font-weight: 700; color: #b91c1c;">Solid [E]s Released to Surroundings:</span>
-          <span style="font-weight: 800; font-family: monospace; font-size: 1.25rem; color: #b91c1c;" id="releasedCount">0</span>
+        <canvas id="molCanvas" width="410" height="110"></canvas>
+        <div class="bond-state-callout" id="bondExplanation">
+          <strong>Temperature Rising:</strong> Added thermal energy increases the average <strong>kinetic energy</strong> (vibration) of the water molecules.
         </div>
       </div>
+    </div>
+  </div>
 
-      <!-- Golden Rule Callout -->
-      <div class="callout-box" id="explanationText">
-        <strong>Watch the Thermometer & Air:</strong> As moisture rises, it carries hidden <em>Ghost [E]</em> blocks. When the cold air forces condensation to happen, watch where that energy goes—<strong>it dumps directly into the surrounding air!</strong>
+  <!-- Right Column: Live Chart & Data Table -->
+  <div>
+    <div class="card">
+      <div class="card-title-row">
+        <span style="font-size: 1.05rem; font-weight: 700; color: var(--primary);">Heating Curve (Temperature vs. Time)</span>
+      </div>
+      <div class="chart-container">
+        <canvas id="heatingChart"></canvas>
+      </div>
+
+      <div class="table-controls">
+        <strong style="font-size: 0.9rem; color: var(--primary);">Data Table</strong>
+        <button class="btn" style="background: #0f766e; color: white; padding: 4px 10px; font-size: 0.8rem;" onclick="copyTableData()">📋 Copy Data (for Google Sheets)</button>
+      </div>
+
+      <div class="table-scroll">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>Time (min:sec)</th>
+              <th>Time (sec)</th>
+              <th>Temp (°C)</th>
+              <th>Observed State / Phase Activity</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <!-- Data rows injected dynamically -->
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -324,503 +518,499 @@
 </div>
 
 <script>
-  /* --- Simulation State Variables --- */
-  let mode = 'hurricane'; // 'hurricane' | 'winter'
-  let isPlaying = false;
-  let progress = 0.0; // 0.0 to 1.0 (Ascent / Storm Timeline)
-  
-  // Thermometers
-  let surroundingAirTemp = 24.0;
-  
-  // Block counters
-  let totalGhost = 12;
-  let ghostRemaining = 12;
-  let solidInAir = 4;
-  let solidReleased = 0;
+  /* --- Simulation Physics & State Variables --- */
+  let isHeating = false;
+  let simSpeed = 5;
+  let simTime = 0; // seconds
+  let temp = -10.0; // °C
+  let lastLoggedTime = -999;
 
-  // Particle systems
-  let vapourPuffParticles = [];
-  let rainParticles = [];
-  let flyingRedE = [];
+  let meltEnergy = 0;
+  const meltEnergyRequired = 160; 
 
-  const canvas = document.getElementById('stageCanvas');
-  const ctx = canvas.getContext('2d');
+  let boilEnergy = 0;
+  const boilEnergyRequired = 800;
 
-  function setMode(newMode) {
-    mode = newMode;
-    document.getElementById('tabHurricane').className = mode === 'hurricane' ? 'tab-btn active' : 'tab-btn';
-    document.getElementById('tabWinter').className = mode === 'winter' ? 'tab-btn active' : 'tab-btn';
-    resetSim();
-  }
+  // Visual particles for bubbles and steam
+  let steamParticles = [];
+  let bubbleParticles = [];
 
-  function resetSim() {
-    isPlaying = false;
-    progress = 0.0;
-    surroundingAirTemp = mode === 'hurricane' ? 25.0 : 4.0;
-    ghostRemaining = 12;
-    solidInAir = 4;
-    solidReleased = 0;
-    flyingRedE = [];
-    rainParticles = [];
+  // Molecular visual particles
+  const molCanvas = document.getElementById('molCanvas');
+  const molCtx = molCanvas.getContext('2d');
+  let molecules = [];
 
-    document.getElementById('playBtn').innerText = "▶️ Start Ascent";
-    document.getElementById('playBtn').className = "btn btn-play";
-    updatePills();
-    updateDisplays();
-    render();
-  }
-
-  function togglePlay() {
-    if (progress >= 1.0) resetSim();
-    isPlaying = !isPlaying;
-    const btn = document.getElementById('playBtn');
-    if (isPlaying) {
-      btn.innerText = "⏸️ Pause";
-      btn.className = "btn btn-pause";
-    } else {
-      btn.innerText = "▶️ Resume";
-      btn.className = "btn btn-play";
-    }
-  }
-
-  function jumpTo(step) {
-    if (step === 1) progress = 0.05;
-    else if (step === 2) progress = 0.42;
-    else if (step === 3) progress = 0.78;
-    updateSimulationState();
-    render();
-  }
-
-  /* --- Physics & Progression Engine --- */
-  let lastTime = performance.now();
-
-  function loop(now) {
-    const dt = (now - lastTime) / 1000;
-    lastTime = now;
-
-    if (isPlaying && progress < 1.0) {
-      // Steady, deliberate ascent speed (~24 seconds full run)
-      progress += dt * 0.042;
-      if (progress > 1.0) progress = 1.0;
-      updateSimulationState();
-    }
-
-    render();
-    requestAnimationFrame(loop);
-  }
-  requestAnimationFrame(loop);
-
-  function updateSimulationState() {
-    // Step 1: Rising air cools (Progress 0.0 to 0.35)
-    if (progress < 0.35) {
-      const baseT = mode === 'hurricane' ? 25.0 : 4.0;
-      surroundingAirTemp = baseT - (progress / 0.35) * 12.0;
-      ghostRemaining = 12;
-      solidReleased = 0;
-      solidInAir = 4;
-    }
-    // Step 2: Cool air makes clouds & releases latent heat (Progress 0.35 to 0.7)
-    else if (progress >= 0.35 && progress < 0.7) {
-      const phaseFrac = (progress - 0.35) / 0.35;
-      const converted = Math.floor(phaseFrac * totalGhost);
-      ghostRemaining = totalGhost - converted;
-
-      const factor = mode === 'winter' ? 2 : 1; // Winter deposition releases DOUBLE solid E!
-      solidReleased = converted * factor;
-      solidInAir = 4 + solidReleased;
-
-      // Latent heat dumps into surroundings! Air warms up or resists cooling:
-      const coldFloor = mode === 'hurricane' ? 13.0 : -8.0;
-      surroundingAirTemp = coldFloor + (solidReleased * 0.85);
-
-      // Trigger visual bursting E's inside microscope
-      if (Math.random() < 0.15 && flyingRedE.length < 8) {
-        spawnRedE();
+  // Initialize a neat 4-row crystal lattice
+  function initMolecules() {
+    molecules = [];
+    const rows = 4;
+    const cols = 7;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const bx = 38 + c * 52 + (r % 2) * 20;
+        const by = 26 + r * 22; // Row 0 (top) down to Row 3 (bottom)
+        molecules.push({
+          baseX: bx,
+          baseY: by,
+          x: bx,
+          y: by,
+          vx: (Math.random() - 0.5) * 1.5,
+          vy: (Math.random() - 0.5) * 1.5,
+          isFreed: false,
+          row: r,
+          radius: 6
+        });
       }
     }
-    // Step 3: Clouds make rain / storm builds (Progress 0.7 to 1.0)
-    else {
-      ghostRemaining = 0;
-      const factor = mode === 'winter' ? 2 : 1;
-      solidReleased = totalGhost * factor;
-      solidInAir = 4 + solidReleased;
-      surroundingAirTemp = mode === 'hurricane' ? 19.5 : -1.0;
+    // Bottom rows (closest to hot plate) melt first; top rows (floating ice) melt last
+    molecules.sort((a, b) => b.row - a.row);
+  }
+  initMolecules();
 
-      // Spawn falling precipitation
-      if (rainParticles.length < 50) {
-        rainParticles.push({
-          x: 40 + Math.random() * 240,
-          y: 280,
-          vy: mode === 'winter' ? 2 + Math.random() * 2 : 6 + Math.random() * 4,
-          vx: (Math.random() - 0.5) * 1.5,
-          length: mode === 'winter' ? 4 : 12
+  /* --- Setup Ice Chunks In Beaker --- */
+  const iceContainer = document.getElementById('iceContainer');
+  function createIceCubes() {
+    iceContainer.innerHTML = '';
+    const positions = [
+      {l: 15, b: 10, w: 32, h: 26, r: 12},
+      {l: 45, b: 12, w: 36, h: 30, r: -8},
+      {l: 85, b: 14, w: 34, h: 28, r: 15},
+      {l: 120, b: 10, w: 30, h: 25, r: -14},
+      {l: 30, b: 38, w: 34, h: 28, r: 25},
+      {l: 70, b: 42, w: 38, h: 32, r: -18},
+      {l: 105, b: 36, w: 32, h: 28, r: 8}
+    ];
+
+    positions.forEach(pos => {
+      const cube = document.createElement('div');
+      cube.className = 'ice-cube';
+      cube.dataset.baseRotation = pos.r;
+      cube.style.left = pos.l + 'px';
+      cube.style.bottom = pos.b + 'px';
+      cube.style.width = pos.w + 'px';
+      cube.style.height = pos.h + 'px';
+      cube.style.transform = `rotate(${pos.r}deg)`;
+      iceContainer.appendChild(cube);
+    });
+  }
+  createIceCubes();
+
+  /* --- Chart.js Setup (Heating Curve) --- */
+  const chartCtx = document.getElementById('heatingChart').getContext('2d');
+  const heatingChart = new Chart(chartCtx, {
+    type: 'line',
+    data: {
+      labels: [0],
+      datasets: [{
+        label: 'Water Temperature (°C)',
+        data: [-10.0],
+        borderColor: '#0284c7',
+        backgroundColor: 'rgba(2, 132, 199, 0.1)',
+        borderWidth: 2.5,
+        pointRadius: 2,
+        tension: 0.1,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          title: { display: true, text: 'Time (seconds)', font: { weight: 'bold' } },
+          ticks: { stepSize: 60 }
+        },
+        y: {
+          min: -15,
+          max: 115,
+          title: { display: true, text: 'Temperature (°C)', font: { weight: 'bold' } },
+          ticks: { stepSize: 20 }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.parsed.y.toFixed(1)} °C at ${ctx.parsed.x}s`
+          }
+        }
+      }
+    }
+  });
+
+  /* --- Simulation Loop --- */
+  let lastTimestamp = performance.now();
+
+  function updateSimulation(currentTimestamp) {
+    const dt = (currentTimestamp - lastTimestamp) / 1000;
+    lastTimestamp = currentTimestamp;
+
+    if (isHeating) {
+      const step = dt * simSpeed;
+      simTime += step;
+
+      // Phase 1: Ice warming (-10°C to 0°C)
+      if (temp < 0) {
+        temp += step * 0.22;
+        if (temp > 0) temp = 0;
+      }
+      // Phase 2: Melting plateau at 0°C (Latent Heat of Fusion)
+      else if (temp === 0 && meltEnergy < meltEnergyRequired) {
+        meltEnergy += step;
+        const meltRatio = meltEnergy / meltEnergyRequired;
+        
+        // Bottom rows melt first into liquid
+        const freedTarget = Math.floor(meltRatio * molecules.length);
+        for (let i = 0; i < molecules.length; i++) {
+          molecules[i].isFreed = (i < freedTarget);
+        }
+
+        // Shrink beaker ice cubes AND float them upward on top of the rising water
+        const cubes = iceContainer.children;
+        for (let cube of cubes) {
+          const rot = cube.dataset.baseRotation || 0;
+          cube.style.opacity = (1 - meltRatio * 0.85);
+          // Ice cubes lift up as liquid pools beneath them
+          cube.style.transform = `translateY(${-meltRatio * 32}px) scale(${1 - meltRatio * 0.55}) rotate(${rot}deg)`;
+        }
+        document.getElementById('waterLevel').style.height = `${meltRatio * 38}%`;
+      }
+      // Phase 3: Liquid heating (0°C to 100°C)
+      else if (temp >= 0 && temp < 100) {
+        temp += step * 0.35;
+        molecules.forEach(m => m.isFreed = true);
+        iceContainer.innerHTML = '';
+        document.getElementById('waterLevel').style.height = '42%';
+        if (temp > 100) temp = 100;
+      }
+      // Phase 4: Boiling plateau at 100°C (Latent Heat of Vapourization)
+      else if (temp === 100 && boilEnergy < boilEnergyRequired) {
+        boilEnergy += step;
+        molecules.forEach(m => m.isFreed = true);
+        const boilRatio = boilEnergy / boilEnergyRequired;
+        document.getElementById('waterLevel').style.height = `${Math.max(15, 42 - boilRatio * 18)}%`;
+      }
+
+      // Auto-logging (every 30 sim seconds)
+      if (document.getElementById('autoLogCheck').checked) {
+        if (simTime - lastLoggedTime >= 30) {
+          logDataPoint(false);
+          lastLoggedTime = Math.floor(simTime / 30) * 30;
+        }
+      }
+
+      updateDisplays();
+      updateChartLive();
+    }
+
+    renderFx();
+    renderMolecules();
+    requestAnimationFrame(updateSimulation);
+  }
+
+  requestAnimationFrame(updateSimulation);
+
+  /* --- State & UI Updates --- */
+  function updateDisplays() {
+    const mins = Math.floor(simTime / 60);
+    const secs = Math.floor(simTime % 60);
+    document.getElementById('timerDisplay').innerText = 
+      `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+    document.getElementById('tempDisplay').innerText = `${temp.toFixed(1)} °C`;
+
+    // Mercury height: maps -15°C -> 115°C
+    const pct = Math.min(Math.max(((temp - (-15)) / 130) * 100, 4), 98);
+    document.getElementById('mercuryFill').style.height = `${pct}%`;
+
+    // State Badge & Molecular Status Updates
+    const stateBadge = document.getElementById('stateBadge');
+    const bondTag = document.getElementById('bondStatusTag');
+    const bondExpl = document.getElementById('bondExplanation');
+
+    if (temp < 0) {
+      stateBadge.innerText = "Solid (Ice Warming)";
+      stateBadge.style.background = "#e0f2fe";
+      stateBadge.style.color = "#0369a1";
+
+      bondTag.innerText = "Rigid Lattice";
+      bondExpl.innerHTML = "<strong>Ice Warming:</strong> Added thermal energy increases <strong>kinetic energy</strong>. Molecules vibrate faster in place, causing temperature to rise.";
+    } 
+    else if (temp === 0 && meltEnergy < meltEnergyRequired) {
+      stateBadge.innerText = "Melting (0°C Plateau)";
+      stateBadge.style.background = "#fef3c7";
+      stateBadge.style.color = "#b45309";
+
+      bondTag.innerText = "Breaking Hydrogen Bonds (Melting from Bottom)";
+      bondExpl.innerHTML = "<strong>Latent Heat of Fusion:</strong> Temperature is CONSTANT at 0°C. Conduction from the hot plate breaks bottom bonds first. Water forms below while remaining ice floats on top.";
+    } 
+    else if (temp > 0 && temp < 100) {
+      stateBadge.innerText = "Liquid Water Warming";
+      stateBadge.style.background = "#e0f2fe";
+      stateBadge.style.color = "#0369a1";
+
+      bondTag.innerText = "Fluid Motion (Dynamic Bonds)";
+      bondExpl.innerHTML = "<strong>Water Warming:</strong> Molecules slide past each other, constantly breaking and making temporary bonds. As temperature rises, average kinetic energy increases.";
+    } 
+    else if (temp === 100) {
+      stateBadge.innerText = "Boiling (100°C Plateau)";
+      stateBadge.style.background = "#fee2e2";
+      stateBadge.style.color = "#b91c1c";
+
+      bondTag.innerText = "Overcoming All Attractive Forces";
+      bondExpl.innerHTML = "<strong>Latent Heat of Vapourization:</strong> Temperature is CONSTANT at 100°C. Thermal energy breaks all remaining attractive forces so water molecules can escape as steam/gas.";
+    }
+  }
+
+  function updateChartLive() {
+    const chart = heatingChart;
+    const lastPointX = chart.data.labels[chart.data.labels.length - 1];
+    if (simTime - lastPointX >= 5) {
+      chart.data.labels.push(Math.round(simTime));
+      chart.data.datasets[0].data.push(parseFloat(temp.toFixed(1)));
+      chart.update('none');
+    }
+  }
+
+  /* --- Visual FX (Bubbles & Steam Canvas) --- */
+  const fxCanvas = document.getElementById('fxCanvas');
+  const fxCtx = fxCanvas.getContext('2d');
+
+  function renderFx() {
+    fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+
+    // Boiling Bubbles inside Beaker
+    if (temp >= 95 && isHeating) {
+      const bubbleCount = temp >= 100 ? 5 : 2;
+      for (let i = 0; i < bubbleCount; i++) {
+        if (Math.random() < 0.4) {
+          bubbleParticles.push({
+            x: 145 + Math.random() * 140,
+            y: 250,
+            r: 2 + Math.random() * 4.5,
+            vy: 2 + Math.random() * 3
+          });
+        }
+      }
+    }
+
+    for (let i = bubbleParticles.length - 1; i >= 0; i--) {
+      const b = bubbleParticles[i];
+      b.y -= b.vy;
+      fxCtx.beginPath();
+      fxCtx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      fxCtx.fillStyle = "rgba(255, 255, 255, 0.75)";
+      fxCtx.strokeStyle = "#38bdf8";
+      fxCtx.lineWidth = 1;
+      fxCtx.fill();
+      fxCtx.stroke();
+
+      if (b.y < 180) bubbleParticles.splice(i, 1);
+    }
+
+    // Steam Vapor Particles Rising
+    if (temp >= 75 && isHeating) {
+      const steamRate = temp >= 100 ? 0.8 : 0.2;
+      if (Math.random() < steamRate) {
+        steamParticles.push({
+          x: 150 + Math.random() * 130,
+          y: 170,
+          vx: (Math.random() - 0.5) * 1.2,
+          vy: 1.5 + Math.random() * 2,
+          r: 6,
+          alpha: 0.5
         });
       }
     }
 
-    updatePills();
+    for (let i = steamParticles.length - 1; i >= 0; i--) {
+      const s = steamParticles[i];
+      s.x += s.vx;
+      s.y -= s.vy;
+      s.r += 0.35;
+      s.alpha -= 0.012;
+
+      fxCtx.beginPath();
+      fxCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      fxCtx.fillStyle = `rgba(226, 232, 240, ${s.alpha})`;
+      fxCtx.fill();
+
+      if (s.alpha <= 0 || s.y < 20) steamParticles.splice(i, 1);
+    }
+  }
+
+  /* --- Sub-Microscopic Molecular Canvas --- */
+  function renderMolecules() {
+    molCtx.clearRect(0, 0, molCanvas.width, molCanvas.height);
+
+    const isSolid = temp < 0;
+    const speedFactor = Math.max(0.25, (temp + 20) / 40);
+
+    molCtx.lineWidth = 1.5;
+    molCtx.setLineDash([4, 4]);
+
+    // Draw Hydrogen Bonds
+    for (let i = 0; i < molecules.length; i++) {
+      for (let j = i + 1; j < molecules.length; j++) {
+        const m1 = molecules[i];
+        const m2 = molecules[j];
+        const dx = m1.x - m2.x;
+        const dy = m1.y - m2.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Case A: Both are locked in the lattice (Top floating ice)
+        if (!m1.isFreed && !m2.isFreed && dist < 56) {
+          molCtx.strokeStyle = "rgba(56, 189, 248, 0.85)"; // Strong cyan lattice bonds
+          molCtx.beginPath();
+          molCtx.moveTo(m1.x, m1.y);
+          molCtx.lineTo(m2.x, m2.y);
+          molCtx.stroke();
+        }
+        // Case B: Boundary where lattice is actively breaking (One lattice, one freed)
+        else if ((m1.isFreed !== m2.isFreed) && dist < 48) {
+          molCtx.strokeStyle = "rgba(245, 158, 11, 0.9)"; // Glowing amber snapping bond
+          molCtx.beginPath();
+          molCtx.moveTo(m1.x, m1.y);
+          molCtx.lineTo(m2.x, m2.y);
+          molCtx.stroke();
+        }
+        // Case C: Both are freed in liquid motion below
+        else if (m1.isFreed && m2.isFreed && dist < 38) {
+          molCtx.strokeStyle = "rgba(56, 189, 248, 0.25)"; // Transient faint bonds
+          molCtx.beginPath();
+          molCtx.moveTo(m1.x, m1.y);
+          molCtx.lineTo(m2.x, m2.y);
+          molCtx.stroke();
+        }
+      }
+    }
+    molCtx.setLineDash([]);
+
+    // Update positions and draw molecules
+    molecules.forEach(m => {
+      if (isSolid || !m.isFreed) {
+        // Lattice molecules (vibrating in place at the top)
+        m.x = m.baseX + (Math.random() - 0.5) * (speedFactor * 1.4);
+        m.y = m.baseY + (Math.random() - 0.5) * (speedFactor * 1.4);
+      } else {
+        // Freed liquid molecules move around
+        m.x += m.vx * speedFactor;
+        m.y += m.vy * speedFactor;
+
+        // Bounce off canvas boundaries
+        if (m.x < 12 || m.x > molCanvas.width - 12) m.vx *= -1;
+        if (m.y < 12 || m.y > molCanvas.height - 12) m.vy *= -1;
+      }
+
+      // Draw Oxygen (center red atom)
+      molCtx.beginPath();
+      molCtx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
+      molCtx.fillStyle = "#ef4444";
+      molCtx.fill();
+
+      // Draw Hydrogen (two white atoms)
+      molCtx.beginPath();
+      molCtx.arc(m.x - 5, m.y - 4, 3, 0, Math.PI * 2);
+      molCtx.arc(m.x + 5, m.y - 4, 3, 0, Math.PI * 2);
+      molCtx.fillStyle = "#ffffff";
+      molCtx.fill();
+    });
+  }
+
+  /* --- Interactive Controls --- */
+  function togglePower() {
+    isHeating = !isHeating;
+    const btn = document.getElementById('powerBtn');
+    const coil = document.getElementById('heatCoil');
+
+    if (isHeating) {
+      btn.innerText = "⏸️ Turn Hot Plate OFF";
+      btn.className = "btn btn-power-off";
+      coil.classList.add('glowing');
+    } else {
+      btn.innerText = "🔥 Turn Hot Plate ON";
+      btn.className = "btn btn-power-on";
+      coil.classList.remove('glowing');
+    }
+  }
+
+  function logDataPoint(isManual) {
+    const mins = Math.floor(simTime / 60);
+    const secs = Math.floor(simTime % 60);
+    const formattedTime = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    const roundSecs = Math.round(simTime);
+    const roundTemp = temp.toFixed(1);
+
+    let stateNote = "Solid (Ice Warming)";
+    if (temp === 0 && meltEnergy < meltEnergyRequired) stateNote = "Melting (0°C Plateau - Latent Heat of Fusion)";
+    else if (temp > 0 && temp < 100) stateNote = "Liquid Water Warming";
+    else if (temp === 100 && boilEnergy < boilEnergyRequired) stateNote = "Boiling (100°C Plateau - Latent Heat of Vapourization)";
+    else if (temp === 100) stateNote = "Boiling Vigorous / Steam";
+
+    const tbody = document.getElementById('tableBody');
+    const row = document.createElement('tr');
+    if (isManual) row.className = 'highlight-row';
+    row.innerHTML = `
+      <td>${formattedTime}</td>
+      <td>${roundSecs}</td>
+      <td>${roundTemp}</td>
+      <td>${stateNote}</td>
+    `;
+    tbody.appendChild(row);
+
+    const scrollContainer = document.querySelector('.table-scroll');
+    scrollContainer.scrollTop = scrollContainer.scrollHeight;
+  }
+
+  function copyTableData() {
+    const table = document.getElementById('dataTable');
+    let csv = "Time (min:sec)\tTime (sec)\tTemperature (°C)\tObserved Phase Activity\n";
+    const rows = table.querySelectorAll('tbody tr');
+    
+    if (rows.length === 0) {
+      alert("No data collected yet. Start the hot plate and collect some points first!");
+      return;
+    }
+
+    rows.forEach(r => {
+      const cols = r.querySelectorAll('td');
+      csv += `${cols[0].innerText}\t${cols[1].innerText}\t${cols[2].innerText}\t${cols[3].innerText}\n`;
+    });
+
+    navigator.clipboard.writeText(csv).then(() => {
+      alert("✅ Data copied to clipboard! You can paste (Ctrl+V) directly into Google Sheets or Excel.");
+    });
+  }
+
+  function resetSim() {
+    isHeating = false;
+    simTime = 0;
+    temp = -10.0;
+    meltEnergy = 0;
+    boilEnergy = 0;
+    lastLoggedTime = -999;
+    steamParticles = [];
+    bubbleParticles = [];
+
+    const btn = document.getElementById('powerBtn');
+    btn.innerText = "🔥 Turn Hot Plate ON";
+    btn.className = "btn btn-power-on";
+    document.getElementById('heatCoil').classList.remove('glowing');
+
+    document.getElementById('waterLevel').style.height = '0%';
+    createIceCubes();
+    initMolecules();
+
+    heatingChart.data.labels = [0];
+    heatingChart.data.datasets[0].data = [-10.0];
+    heatingChart.update();
+
+    document.getElementById('tableBody').innerHTML = '';
     updateDisplays();
   }
 
-  function spawnRedE() {
-    flyingRedE.push({
-      x: 520 + (Math.random() - 0.5) * 40,
-      y: 190 + (Math.random() - 0.5) * 40,
-      vx: (Math.random() - 0.5) * 3,
-      vy: (Math.random() - 0.5) * 3,
-      alpha: 1.0
-    });
-  }
-
-  function updatePills() {
-    const p1 = document.getElementById('pill1');
-    const p2 = document.getElementById('pill2');
-    const p3 = document.getElementById('pill3');
-    const badge = document.getElementById('stageBadge');
-    const expl = document.getElementById('explanationText');
-
-    p1.className = 'step-pill';
-    p2.className = 'step-pill';
-    p3.className = 'step-pill';
-
-    if (progress < 0.35) {
-      p1.className = 'step-pill active';
-      badge.innerText = "Step 1: Rising Air Cools";
-      expl.innerHTML = `<strong>1. Rising Air Cools:</strong> Warm ocean air lifts. Notice the thermometer dropping as the air expands. Water vapour carries <strong>${ghostRemaining} Ghost [E]s</strong> of hidden latent heat.`;
-    } else if (progress < 0.7) {
-      p2.className = 'step-pill active';
-      badge.innerText = "Step 2: Clouds Form & Heat Releases";
-      const eText = mode === 'winter' ? "TWO Solid Red [E]s per snowflake (Deposition!)" : "Solid Red [E]s";
-      expl.innerHTML = `<strong>2. Cool Air Makes Clouds:</strong> As droplets form in the microscope lens, Ghost [E]s transform into <strong>${eText}</strong> and escape into the air. <em>Look at the thermometer—the surrounding air is warming up!</em>`;
-    } else {
-      p3.className = 'step-pill active';
-      badge.innerText = mode === 'winter' ? "Step 3: Blizzard / Bomb Cyclone" : "Step 3: Heavy Rain & Updrafts";
-      expl.innerHTML = `<strong>3. Clouds Make Precipitation:</strong> The massive dump of sensible heat (${solidReleased} Solid [E]s) into the air fuels ferocious updrafts. The cloud reaches massive height and heavy ${mode === 'winter' ? 'snow' : 'rain'} pours down!`;
-    }
-  }
-
-  function updateDisplays() {
-    document.getElementById('ghostCount').innerText = ghostRemaining;
-    document.getElementById('solidCount').innerText = solidInAir;
-    document.getElementById('releasedCount').innerText = solidReleased;
-  }
-
-  /* --- Rendering Canvas Graphics --- */
-  function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // 1. Sky Gradient (Background)
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    if (mode === 'hurricane') {
-      skyGrad.addColorStop(0, '#0c4a6e');
-      skyGrad.addColorStop(0.6, '#0284c7');
-      skyGrad.addColorStop(1, '#bae6fd');
-    } else {
-      skyGrad.addColorStop(0, '#1e293b');
-      skyGrad.addColorStop(0.6, '#475569');
-      skyGrad.addColorStop(1, '#94a3b8');
-    }
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // 2. Rising Air Waves / Ghost [E]s in Background Atmosphere
-    const streamCount = 5;
-    for (let s = 0; s < streamCount; s++) {
-      const sx = 70 + s * 45;
-      const currentY = canvas.height - 40 - (progress * 380);
-      drawUpdraftStream(sx, canvas.height - 50, currentY);
-    }
-
-    // 3. Falling Rain / Snow
-    if (progress >= 0.7) {
-      renderPrecipitation();
-    }
-
-    // 4. Dramatic Macroscopic Cloud Formation
-    drawDramaticCloud();
-
-    // 5. Ocean / Landscape at bottom
-    ctx.fillStyle = mode === 'hurricane' ? '#0369a1' : '#334155';
-    ctx.fillRect(0, canvas.height - 45, canvas.width, 45);
-
-    // Ocean Waves or Pack Ice
-    ctx.fillStyle = mode === 'hurricane' ? '#38bdf8' : '#e2e8f0';
-    ctx.font = "bold 11px system-ui";
-    const surfaceText = mode === 'hurricane' ? "🌊 Warm Tropical Waters (Evaporation feeding Ghost [E]s)" : "❄️ Cold Northern Waters & Coastal Ice (Moist Air Clashing with Arctic Blast)";
-    ctx.fillText(surfaceText, 18, canvas.height - 18);
-
-    // 6. Thermometer Inset (Surroundings Temp)
-    drawThermometer(20, 20);
-
-    // 7. Microscopic Lens Inset (Top Right)
-    drawMicroscopeLens(520, 190, 115);
-  }
-
-  function drawUpdraftStream(x, startY, endY) {
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 6]);
-    ctx.beginPath();
-    ctx.moveTo(x, startY);
-    ctx.lineTo(x, Math.max(120, endY));
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Drift rising ghost E blocks upward below the cloud
-    if (progress < 0.6) {
-      const ghostY = startY - ((progress * 1.8) * (startY - 260)) % (startY - 250);
-      drawGhostE(x, ghostY, 0.7);
-    }
-  }
-
-  /* --- Dramatic Billowing Cloud Rendering --- */
-  function drawDramaticCloud() {
-    if (progress < 0.35) return; // No cloud yet
-
-    const cloudStage = (progress - 0.35) / 0.65; // 0 to 1
-    const baseW = 160 + cloudStage * 170;
-    const baseH = 80 + cloudStage * 190;
-    const cloudY = 320 - (cloudStage * 120);
-
-    ctx.save();
-    // Billowing puff circles
-    const puffs = [
-      {dx: 80, dy: 40, r: 45 + cloudStage * 30},
-      {dx: 140, dy: 10, r: 60 + cloudStage * 45},
-      {dx: 210, dy: 30, r: 55 + cloudStage * 35},
-      {dx: 120, dy: 70, r: 50 + cloudStage * 30},
-      {dx: 180, dy: 75, r: 50 + cloudStage * 35},
-      {dx: 240, dy: 80, r: 40 + cloudStage * 25}
-    ];
-
-    ctx.fillStyle = mode === 'hurricane' 
-      ? `rgba(241, 245, 249, ${0.75 + cloudStage * 0.25})`
-      : `rgba(203, 213, 225, ${0.75 + cloudStage * 0.25})`;
-
-    puffs.forEach(p => {
-      ctx.beginPath();
-      ctx.arc(p.dx, cloudY + p.dy, p.r, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
-    // Dark cloud base if raining
-    if (progress >= 0.7) {
-      ctx.fillStyle = "rgba(51, 65, 85, 0.55)";
-      ctx.beginPath();
-      ctx.roundRect(50, cloudY + 95, 220, 24, 8);
-      ctx.fill();
-    }
-
-    ctx.restore();
-  }
-
-  function renderPrecipitation() {
-    ctx.save();
-    for (let i = rainParticles.length - 1; i >= 0; i--) {
-      const p = rainParticles[i];
-      p.y += p.vy;
-      p.x += p.vx;
-
-      if (mode === 'hurricane') {
-        // Rain streak
-        ctx.strokeStyle = "rgba(56, 189, 248, 0.85)";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        ctx.lineTo(p.x + p.vx, p.y + p.length);
-        ctx.stroke();
-      } else {
-        // Snow flake
-        ctx.fillStyle = "white";
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      if (p.y > canvas.height - 45) {
-        rainParticles.splice(i, 1);
-      }
-    }
-    ctx.restore();
-  }
-
-  /* --- Inset: Microscope View --- */
-  function drawMicroscopeLens(cx, cy, radius) {
-    ctx.save();
-
-    // Circular Clip Lens
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.fillStyle = "#0f172a";
-    ctx.fill();
-    ctx.lineWidth = 5;
-    ctx.strokeStyle = "#38bdf8";
-    ctx.stroke();
-
-    ctx.clip(); // Restrict internal drawings to inside circle
-
-    // Lens Interior Sky
-    ctx.fillStyle = "#1e293b";
-    ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
-
-    // Title inside lens
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "bold 9px system-ui";
-    ctx.textAlign = "center";
-    ctx.fillText("MICROSCOPIC VIEW (H₂O)", cx, cy - radius + 18);
-
-    // Molecular Content inside Lens depending on Step
-    if (progress < 0.35) {
-      // Step 1: Just floating water vapour holding Ghost [E]s
-      ctx.fillStyle = "#38bdf8";
-      ctx.font = "bold 11px system-ui";
-      ctx.fillText("Vapour Molecules", cx, cy - 35);
-
-      for (let i = 0; i < 4; i++) {
-        const vx = cx - 45 + (i % 2) * 90;
-        const vy = cy - 5 + Math.floor(i / 2) * 55;
-        drawVapourMolecule(vx, vy);
-        drawGhostE(vx, vy, 1.0);
-      }
-    } else {
-      // Step 2 & 3: Droplets or Snowflakes forming & Solid Red [E] popping out!
-      const isSnow = (mode === 'winter');
-
-      ctx.fillStyle = isSnow ? "#7dd3fc" : "#38bdf8";
-      ctx.font = "bold 11px system-ui";
-      ctx.fillText(isSnow ? "❄️ Snow Deposition" : "💧 Liquid Droplet Formed", cx, cy - 45);
-
-      // Draw Center Droplet or Snowflake
-      if (isSnow) {
-        drawSnowflakeMicro(cx, cy);
-      } else {
-        ctx.beginPath();
-        ctx.arc(cx, cy, 34, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(56, 189, 248, 0.85)";
-        ctx.strokeStyle = "#bae6fd";
-        ctx.lineWidth = 3;
-        ctx.fill();
-        ctx.stroke();
-      }
-
-      // Flying Solid Red [E] blocks escaping into the air!
-      flyingRedE.forEach(ep => {
-        ep.x += ep.vx;
-        ep.y += ep.vy;
-        drawSolidE(ep.x, ep.y, ep.alpha);
-      });
-
-      // Status text at bottom of lens
-      ctx.fillStyle = "#f87171";
-      ctx.font = "bold 10px system-ui";
-      ctx.fillText("Solid [E] Escapes to Air!", cx, cy + radius - 16);
-    }
-
-    ctx.restore();
-
-    // Lens Pointer Line to the Cloud
-    ctx.strokeStyle = "#38bdf8";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([3, 3]);
-    ctx.beginPath();
-    ctx.moveTo(cx - radius, cy);
-    ctx.lineTo(260, 240);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  function drawVapourMolecule(x, y) {
-    // Red oxygen with two white lobes
-    ctx.beginPath();
-    ctx.arc(x, y, 7, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(239, 68, 68, 0.4)";
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(x - 5, y - 4, 3, 0, Math.PI * 2);
-    ctx.arc(x + 5, y - 4, 3, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-    ctx.fill();
-  }
-
-  function drawSnowflakeMicro(x, y) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 3;
-    for (let i = 0; i < 6; i++) {
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(0, 28);
-      ctx.moveTo(0, 14);
-      ctx.lineTo(7, 20);
-      ctx.moveTo(0, 14);
-      ctx.lineTo(-7, 20);
-      ctx.stroke();
-      ctx.rotate(Math.PI / 3);
-    }
-    ctx.restore();
-  }
-
-  /* --- Helpers: Ghost E vs Solid Red E --- */
-  function drawGhostE(x, y, alpha) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.setLineDash([2, 2]);
-    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
-    ctx.fillStyle = `rgba(148, 163, 184, ${alpha * 0.3})`;
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(-7, -7, 14, 14);
-    ctx.fillRect(-7, -7, 14, 14);
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.9})`;
-    ctx.font = "bold 9px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("E", 0, 0);
-    ctx.restore();
-  }
-
-  function drawSolidE(x, y, alpha) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.fillStyle = `rgba(239, 68, 68, ${alpha})`;
-    ctx.strokeStyle = "#b91c1c";
-    ctx.lineWidth = 1;
-    ctx.fillRect(-8, -8, 16, 16);
-    ctx.strokeRect(-8, -8, 16, 16);
-
-    ctx.fillStyle = "white";
-    ctx.font = "bold 10px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("E", 0, 0);
-    ctx.restore();
-  }
-
-  /* --- Outside Thermometer --- */
-  function drawThermometer(x, y) {
-    ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-    ctx.strokeStyle = "#cbd5e1";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.roundRect(x, y, 160, 68, 8);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "bold 10px system-ui";
-    ctx.textAlign = "left";
-    ctx.fillText("Surrounding Air Temp:", x + 10, y + 20);
-
-    ctx.fillStyle = surroundingAirTemp > 10 ? "#ef4444" : (surroundingAirTemp > 0 ? "#fbbf24" : "#38bdf8");
-    ctx.font = "bold 20px monospace";
-    ctx.fillText(`${surroundingAirTemp.toFixed(1)} °C`, x + 10, y + 46);
-  }
-
-  // Initial draw
-  resetSim();
+  // Initial display setup
+  updateDisplays();
+  logDataPoint(false);
 </script>
 
 </body>
